@@ -5,4 +5,16 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "zpr_multithread_matrix"
+crate-type = ["cdylib", 'lib']
+path = "src/lib.rs"
+
+[[bin]]
+name = "zpr_multithread_matrix_bin"
+path = "src/main.rs"
+
 [dependencies]
+pyo3 = { version = "0.21.2", features = ["extension-module"] }
+numpy = "0.21.0"
+ndarray = "0.15"

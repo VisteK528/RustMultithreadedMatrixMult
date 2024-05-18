@@ -1,4 +1,4 @@
-#[path = "../src/main.rs"] mod main;
+#[path = "../src/lib.rs"] mod main;
 use main::zpr_matrix;
 
 #[cfg(test)]

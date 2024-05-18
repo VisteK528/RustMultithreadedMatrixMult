@@ -1,5 +1,5 @@
 [package]
-name = "threaded_matrix_mult"
+name = "zpr_multithread_matrix"
 version = "0.1.0"
 edition = "2021"
 

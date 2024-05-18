@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "zpr_multithread_matrix"
-authors = "Piotr Patek"
+authors = [{name="Piotr Patek", email="piotrpatek17@gmail.com"}]
 description = "Multithreaded matrix multiplication package made for the Advanced C++ Programming Course at WUT"
 requires-python = ">=3.7"
 classifiers = [

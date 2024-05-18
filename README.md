@@ -35,6 +35,11 @@ Wykorzystywane biblioteki:
 - `numpy` - definiowanie macierzy
 - `maturin` - budowa projektu
 
+Wywołanie przykładów
+```bash
+python3 python_examples/zpr_matrix_mult.py
+```
+
 ## Biblioteka w języku Rust
 Uruchamianie testów jednostkowych w katalogu projektu
 ```bash

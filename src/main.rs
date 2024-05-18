@@ -25,13 +25,13 @@ fn main() {
     let a = zpr_matrix::Matrix::new(
         2,
         2,
-        &vec!{1., 2., 3., 4.}
+        &[1., 2., 3., 4.]
     );
 
     let b = zpr_matrix::Matrix::new(
         2,
         2,
-        &vec!{1., 2., 3., 4.}
+        &[1., 2., 3., 4.]
     );
 
 

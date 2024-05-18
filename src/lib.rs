@@ -1,16 +1,13 @@
 use std::thread;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
-use ndarray::ArrayView;
 use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
-use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD, Array2, IxDyn, Dim};
-use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn, PyArrayMethods, PyArray2, PyArray};
-use pyo3::{pymodule, types::PyModule, PyResult, Python, Bound};
+use numpy::ndarray::{ArrayD, IxDyn};
+use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
+use pyo3::{pymodule, types::PyModule, PyResult, Python};
 
 #[allow(dead_code)]
 pub mod zpr_matrix{
-    use ndarray::ShapeBuilder;
     use super::*;
 
 
@@ -80,7 +77,7 @@ pub mod zpr_matrix{
             let mut vec = Vec::with_capacity(self.rows*self.columns);
             for row in &self.data{
                 for element in row{
-                    vec.push(element.clone());
+                    vec.push(*element);
                 }
             }
             vec
@@ -218,54 +215,58 @@ pub mod zpr_matrix{
     }
 }
 
+#[pyfunction]
+#[pyo3(name = "multiply_f64")]
+fn multiply_f64<'py>(
+    py: Python<'py>,
+    x: &Bound<'py, PyAny>,
+    y: &Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyArrayDyn<f64>>> {
+    let x_input = x.into_py(py);
+    let y_input = y.into_py(py);
+
+    let x_array = if let Ok(array) = x_input.extract::<PyReadonlyArrayDyn<f64>>(py) {
+        array
+    } else {
+        return Err(pyo3::exceptions::PyValueError::new_err("Input x must be either a numpy array of dtype float64 or int32"));
+    };
+
+    // Convert y to PyReadonlyArrayDyn<f64>
+    let y_array = if let Ok(array) = y_input.extract::<PyReadonlyArrayDyn<f64>>(py) {
+        array
+    } else {
+        return Err(pyo3::exceptions::PyValueError::new_err("Input y must be either a numpy array of dtype float64 or int32"));
+    };
+
+    let x = x_array.as_array();
+    let y = y_array.as_array();
+
+    if x.ndim() != 2 || y.ndim() != 2 {
+        return Err(pyo3::exceptions::PyValueError::new_err("Input arrays must be 2-dimensional"));
+    }
+
+    let x_shape = x.shape();
+    let y_shape = y.shape();
+
+    if x_shape[1] != y_shape[0] {
+        return Err(pyo3::exceptions::PyValueError::new_err("Matrices cannot be multiplied due to incompatible dimensions"));
+    }
+
+    let x_vec: Vec<f64> = x.iter().cloned().collect();
+    let y_vec: Vec<f64> = y.iter().cloned().collect();
+
+    let x_mat = zpr_matrix::Matrix::new(x_shape[0], x_shape[1], &x_vec);
+    let y_mat = zpr_matrix::Matrix::new(y_shape[0], y_shape[1], &y_vec);
+
+    let z_mat = zpr_matrix::multi_threaded_multiply_channel(&x_mat, &y_mat);
+
+    let shape = vec![z_mat.shape().0, z_mat.shape().1];
+    let array = ArrayD::from_shape_vec(IxDyn(&shape), z_mat.data()).unwrap();
+    Ok(array.into_pyarray_bound(py))
+}
 
 #[pymodule]
-fn zpr_multithread_matrix(_py: Python, m: &PyModule) -> PyResult<()> {
-    #[pyfn(m)]
-    #[pyo3(name = "multiply_f64")]
-    fn multiply_f64<'py>(
-        py: Python<'py>,
-        x: &PyAny,
-        y: &PyAny,
-    ) -> PyResult<&'py PyArrayDyn<f64>> {
-        let x_array = if let Ok(array) = x.extract::<PyReadonlyArrayDyn<f64>>() {
-            array
-        } else {
-            return Err(pyo3::exceptions::PyValueError::new_err("Input x must be either a numpy array of dtype float64 or int32"));
-        };
-
-        // Convert y to PyReadonlyArrayDyn<f64>
-        let y_array = if let Ok(array) = y.extract::<PyReadonlyArrayDyn<f64>>() {
-            array
-        } else {
-            return Err(pyo3::exceptions::PyValueError::new_err("Input y must be either a numpy array of dtype float64 or int32"));
-        };
-
-        let x = x_array.as_array();
-        let y = y_array.as_array();
-
-        if x.ndim() != 2 || y.ndim() != 2 {
-            return Err(pyo3::exceptions::PyValueError::new_err("Input arrays must be 2-dimensional"));
-        }
-
-        let x_shape = x.shape();
-        let y_shape = y.shape();
-
-        if x_shape[1] != y_shape[0] {
-            return Err(pyo3::exceptions::PyValueError::new_err("Matrices cannot be multiplied due to incompatible dimensions"));
-        }
-
-        let x_vec: Vec<f64> = x.iter().cloned().collect();
-        let y_vec: Vec<f64> = y.iter().cloned().collect();
-
-        let x_mat = zpr_matrix::Matrix::new(x_shape[0], x_shape[1], &x_vec);
-        let y_mat = zpr_matrix::Matrix::new(y_shape[0], y_shape[1], &y_vec);
-
-        let z_mat = zpr_matrix::multi_threaded_multiply_channel(&x_mat, &y_mat);
-
-        let shape = vec![z_mat.shape().0, z_mat.shape().1];
-        let array = ArrayD::from_shape_vec(IxDyn(&shape), z_mat.data()).unwrap();
-        Ok(array.into_pyarray(py))
-    }
+fn zpr_multithread_matrix(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(multiply_f64, m)?)?;
     Ok(())
 }

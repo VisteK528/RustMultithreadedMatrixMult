@@ -25,7 +25,7 @@ mod test {
             &vec!{7., 10., 15., 22.}
         );
 
-        let C = zpr_matrix::multi_threaded_multiply_channel(&A, &B);
+        let C = zpr_matrix::multi_threaded_multiply(&A, &B);
 
         assert_eq!(C_expect.compare(&C), true);
     }
@@ -50,7 +50,7 @@ mod test {
             &vec!{58., 64., 139., 154.}
         );
 
-        let C = zpr_matrix::multi_threaded_multiply_channel(&A, &B);
+        let C = zpr_matrix::multi_threaded_multiply(&A, &B);
 
         assert_eq!(C_expect.compare(&C), true);
     }
@@ -71,7 +71,7 @@ mod test {
 
         let C_expect = A.clone();
 
-        let C = zpr_matrix::multi_threaded_multiply_channel(&A, &I);
+        let C = zpr_matrix::multi_threaded_multiply(&A, &I);
 
         assert_eq!(C_expect.compare(&C), true);
     }
@@ -96,7 +96,7 @@ mod test {
             &vec!{-7., 10., 15., -22.}
         );
 
-        let C = zpr_matrix::multi_threaded_multiply_channel(&A, &B);
+        let C = zpr_matrix::multi_threaded_multiply(&A, &B);
 
         assert_eq!(C_expect.compare(&C), true);
     }
@@ -121,7 +121,7 @@ mod test {
             &vec!{27., 30., 33., 61., 68., 75., 95., 106., 117.}
         );
 
-        let C = zpr_matrix::multi_threaded_multiply_channel(&A, &B);
+        let C = zpr_matrix::multi_threaded_multiply(&A, &B);
 
         assert_eq!(C_expect.compare(&C), true);
     }
@@ -146,7 +146,7 @@ mod test {
             &vec!{30., 24., 18., 84., 69., 54., 138., 114., 90.}
         );
 
-        let C = zpr_matrix::multi_threaded_multiply_channel(&A, &B);
+        let C = zpr_matrix::multi_threaded_multiply(&A, &B);
 
         assert_eq!(C_expect.compare(&C), true);
     }

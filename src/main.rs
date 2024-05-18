@@ -41,24 +41,16 @@ fn main() {
     println!("Single threaded: {:?}", end_time_1-start_time_1);
 
     // C.print();
-
+    let threads2 = std::thread::available_parallelism().unwrap().get();
     let start_time_2 = Instant::now();
-    let d = zpr_matrix::multi_threaded_multiply(&a, &b);
+    let d = zpr_matrix::multi_threaded_multiply(&a, &b, threads2);
     let end_time_2 = Instant::now();
     println!("Multi threaded: {:?}", end_time_2-start_time_2);
 
 
-    let start_time_3 = Instant::now();
-    let e = zpr_matrix::multi_threaded_multiply_channel(&a, &b);
-    let end_time_3 = Instant::now();
-    println!("Multi threaded: {:?}", end_time_3-start_time_3);
-
-
     // D.print();
     println!("Comparison: {:?}", c.compare(&d));
-    println!("Comparison: {:?}", c.compare(&e));
-    println!("CPU's: {:?}", std::thread::available_parallelism().unwrap());
+    println!("CPU's: {:?}", threads2);
 
     d.print();
-    e.print();
 }

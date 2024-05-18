@@ -1,6 +1,6 @@
 use std::thread;
 use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use pyo3::prelude::*;
 use numpy::ndarray::{ArrayD, IxDyn};
 use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
@@ -105,57 +105,7 @@ pub mod zpr_matrix{
         Matrix::new(c_rows, c_cols, &c_data)
     }
 
-    pub fn multiply_thread_element(a: &Matrix, b: &Matrix, c_data_mut: &Arc<Mutex<&mut Vec<f64>>>, row: usize, column: usize){
-        let mut sum: f64 = 0.;
-        for i in 0..a.columns{
-            sum += a.data[row][i]*b.data[i][column];
-        }
-        let mut x = c_data_mut.lock().unwrap();
-        x[row*b.columns+column] = sum;
-    }
-
-    pub fn multi_threaded_multiply(a: &Matrix, b: &Matrix) -> Matrix {
-        assert_eq!(a.columns, b.rows);
-
-        let c_rows = a.rows;
-        let c_cols = b.columns;
-        let lock = Arc::new(Mutex::new(vec![0.; c_cols * c_rows]));
-
-        std::thread::scope(|s|{
-            let element_thread_handle = |i: usize, j: usize| {
-                let mut sum: f64 = 0.;
-                for k in 0..a.columns{
-                    sum += a.data[i][k]*b.data[k][j];
-                }
-                let mut x = lock.lock().unwrap();
-                x[i*b.columns+j] = sum;
-
-
-            };
-
-            let mut handles: Vec<std::thread::ScopedJoinHandle<()>> = vec![];
-            for i in 0..c_rows {
-                for j in 0..c_cols {
-                    handles.push(s.spawn(move || {element_thread_handle(i, j);}));
-
-
-                }
-            }
-
-            for handle in handles {
-                handle.join().unwrap();
-            }
-
-
-        });
-
-
-
-        let x =  Matrix::new(c_rows, c_cols, &lock.lock().unwrap());
-        x
-    }
-
-    pub fn multi_threaded_multiply_channel(a: &Matrix, b: &Matrix) -> Matrix {
+    pub fn multi_threaded_multiply(a: &Matrix, b: &Matrix, mut threads: usize) -> Matrix {
         assert_eq!(a.columns, b.rows);
 
         let c_rows = a.rows;
@@ -167,10 +117,10 @@ pub mod zpr_matrix{
         let a = Arc::new(a.clone());
         let b = Arc::new(b.clone());
 
-        let mut threads = 16;
         if threads > c_cols*c_rows{
             threads = c_cols*c_rows;
         }
+
         let elements_per_thread = c_cols*c_rows / threads;
         let mut start_element = 0usize;
         for thread in 0..threads{
@@ -221,6 +171,7 @@ fn multiply_f64<'py>(
     py: Python<'py>,
     x: &Bound<'py, PyAny>,
     y: &Bound<'py, PyAny>,
+    num_threads: Option<usize>
 ) -> PyResult<Bound<'py, PyArrayDyn<f64>>> {
     let x_input = x.into_py(py);
     let y_input = y.into_py(py);
@@ -258,7 +209,11 @@ fn multiply_f64<'py>(
     let x_mat = zpr_matrix::Matrix::new(x_shape[0], x_shape[1], &x_vec);
     let y_mat = zpr_matrix::Matrix::new(y_shape[0], y_shape[1], &y_vec);
 
-    let z_mat = zpr_matrix::multi_threaded_multiply_channel(&x_mat, &y_mat);
+    let num_threads = num_threads.unwrap_or_else(|| {
+        std::thread::available_parallelism().unwrap().get()
+    });
+
+    let z_mat = zpr_matrix::multi_threaded_multiply(&x_mat, &y_mat, num_threads);
 
     let shape = vec![z_mat.shape().0, z_mat.shape().1];
     let array = ArrayD::from_shape_vec(IxDyn(&shape), z_mat.data()).unwrap();

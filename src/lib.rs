@@ -87,7 +87,6 @@ pub mod matrix{
     }
 
     fn multiply(a: &Matrix, b: &Matrix) -> Matrix{
-        // Check if matrices can be multiplied
         assert_eq!(a.columns, b.rows);
 
         let c_rows = a.rows;
@@ -122,11 +121,19 @@ pub mod matrix{
             let a = Arc::new(a.clone());
             let b = Arc::new(b.clone());
 
-            if threads > c_cols*c_rows{
-                threads = c_cols*c_rows;
+            let available_threads = thread::available_parallelism().unwrap().get();
+            if threads > available_threads{
+                threads = available_threads;
             }
 
-            let elements_per_thread = ((c_cols*c_rows) as f64 / threads as f64).ceil() as usize;
+            let mut elements_per_thread = c_cols * c_rows / threads;
+            if threads > c_cols*c_rows{
+                threads = c_cols*c_rows;
+            }else if threads < c_rows*c_rows{
+                elements_per_thread = ((c_cols*c_rows) as f64 / threads as f64).ceil() as usize;
+                threads = c_cols * c_rows / elements_per_thread + 1;
+            }
+
             let mut start_element = 0usize;
             for thread in 0..threads{
                 let start = start_element;
@@ -156,14 +163,14 @@ pub mod matrix{
                 start_element += elements_per_thread;
             }
 
-            drop(tx); // Close the sending side of the channel
+            drop(tx);
 
             for element in rx {
                 data[element.row * c_cols + element.column] = element.value;
             }
 
             for child in children {
-                child.join().expect("oops! the child thread panicked");
+                child.join().expect("Thread panicked");
             }
 
             Matrix::new(c_rows, c_cols, &data)

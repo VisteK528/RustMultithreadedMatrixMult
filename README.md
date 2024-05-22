@@ -5,6 +5,10 @@ W ramach biblioteki zaimplementowano algorytm do wielowątkowego mnożenia macie
 
 Do wystawienia funkcji po stronie Pythona wykorzystano bibliotekę [PyO3](https://pyo3.rs/v0.21.2/).
 
+Wykorzystane wersje języków:
+- Python: `3.10.x`
+- Rust `1.78.0`
+
 ## Instalacja pakietu pythonowego
 W katalogu projektu z plikiem `pyproject.toml` wykonujemy następującą komendę:
 ```bash
@@ -15,15 +19,16 @@ pip3 install .
 ## Algorytm
 Zamiast standardowego algorytmu mnożenia macierzy w ramach którego jeden wątek oblicza wartości wszystkich elementów macierzy wyjściowej, zastosowano algorytm w ramach którego w zależności od ilości użytych wątków oraz wielkości macierzy wyjściowej do każdego wątku przydzielane jest `n` elementów do obliczenia.
 
-Poniżej na rysunku przedstawiono mnożenie dwóch macierzy kwadratowych o wymiarach 3x3 przy użyciu 4 wątków. Kolor tła elementów macierzy `C` oznacza który wątek jest odpowiedzialny za obliczenie wartości tego elementu.
+Po podaniu do funkcji oczekiwanej liczby wątków przeprowadzana jest analiza ile elementów przydzielić do jednego wątku. Możemy wyróżnić trzy sytuacje:
+1. **Liczba wątków jest równa liczbie elementów macierzy wyjściowej** - każdemu wątkowi przydzielany jest jeden element do obliczenia. 
+2. **Liczba wątków jest większa od liczby elementów macierzy wyjściowej** - liczba wątków ograniczana jest do liczby elementów macierzy wyjściowej i każdemu wątkowi jest przydzielany 1 element.
+3. **Liczba wątków jest mniejsza od liczby elementów macierzy wyjściowej** 
+   4. **Liczba elementów podzielna przez liczbę wątków** - każdemu wątkowi przydzielane jest x = n / threads_count elementów, gdzie n to całkowita liczba elementów w macierzy wyjściowej, a threads_count to oczekiwana liczba użytych wątków. 
+   5. **Liczba elementów niepodzielna przez liczbę wątków** - wynik działania  x = n / threads jest zaokrąglany w górę, a następnie liczba wątków jest korygowana wg następującego wzoru: new_threads_count = n / x + 1.
+   
+Poniżej na rysunku przedstawiono mnożenie dwóch macierzy kwadratowych o wymiarach 3x3 przy użyciu 5 wątków. Kolor tła elementów macierzy `C` oznacza który wątek jest odpowiedzialny za obliczenie wartości tego elementu.
 
 ![visualization](doc/multiplication_vis.png)
-
-W sytuacji w której liczba elementów macierzy `C` jest podzielna przez liczbę wątków to do każdego wątku przydzielana jest taka sama liczba elementów.
-
-W przeciwnym przypadku wynik takiego dzielenia jest zaokrąglany w górę. Np dla macierzy mnożenia macierzy 5x5 przy wykorzystaniu 7 wątków otrzymujemy 4 elementy na wątek. Pierwsze 6 wątków oblicza więc po 4 elementy, a ostatni 7 wątek oblicza tylko jeden element.
-
-Jeżeli podana liczba wątków przewyższa liczbę elementów macierzy wyjściowej to wykorzystywane jest tyle wątków ile elementów tej macierzy.
 ## Interfejs i przykłady użycia
 Biblioteka dostarcza funkcje zarówno po stronie Rust'a, jak i Pythona.
 
@@ -70,10 +75,14 @@ z = mm.multiply_f64(x, y, num_threads=2)
 
 Wywołanie przykładów
 ```bash
-python3 python_examples/matrix_mult_performance.py
+python3 python_examples/matrix_mult_simple_examples.py
 ```
 
 ## Wydajność
+Wywołanie przykładów po stronie Rust'a
+```bash
+cargo run --release --package multithread_matrix --bin multithread_matrix_bin
+```
 
 Przykadowy rezultat programu:
 ```text
@@ -101,14 +110,19 @@ Multi threaded: 6.022341037s
 ```
 > Rezultat wywołania programu `rust_examples/main.rs` może się różnić za każdym razem. Jest on zależny od liczby użytych wątków, maszyny, na której jest uruchamiany, oraz aktualnego obciążenia i częstotliwości pracy CPU.
 
+### Porównanie wydajności w trybach jedno i wielowątkowym
+Na rysunku poniżej przedstawiono uśrednione na 10 próbach wartości czasu wykonania mnożenia dla trybów jedno i wielowątkowego w zależności od wielkości macierzy kwadratowych.
+![comparison](doc/multiplication_performance_log.png)
 
-## Biblioteka w języku Rust
-Uruchamianie testów jednostkowych w katalogu projektu
-```bash
-cargo test
-```
+Jak można zauważyć na samym początku mnożenie jednowątkowe deklasuje odpowiednik wielowątkowy. Jest to związane ze stałym czasem, niezależnym od ilości używanych wątków, wymaganym do przygotowania mnożenia w trybie wielowątkowym.
 
-Uruchomienie przykładów w Rust
+Przyrost czasu wykonania w trybie wielowątkowym jest jednak wolniejszy od tego występującego w trybie jednowątkowym i już od około wielkości `120x120` wydajność trybu wielowątkowego zrównuje się z trybem jednowątkowym.
+
+Dalsze zwiększanie wielkości macierzy skutkuje jedynie powiększaniem się różnicy pomiędzy tymi trybami, na korzyść tego wielowątkowego.
+
+Testy wydajnościowe po stronie Pythona:
 ```bash
-cargo run --release --package multithread_matrix --bin multithread_matrix_bin
+python3 python_examples/matrix_mult_performance.py
 ```
+## Autor 
+Piotr Patek, ZPR, SEM 24L

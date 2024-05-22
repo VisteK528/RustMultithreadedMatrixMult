@@ -79,6 +79,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "multithread_matrix"
+version = "1.0.0"
+dependencies = [
+ "ndarray",
+ "numpy",
+ "pyo3",
+ "rand",
+]
+
+[[package]]
 name = "ndarray"
 version = "0.15.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -416,13 +426,3 @@ name = "windows_x86_64_msvc"
 version = "0.52.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bec47e5bfd1bff0eeaf6d8b485cc1074891a197ab4225d504cb7a1ab88b02bf0"
-
-[[package]]
-name = "zpr_multithread_matrix"
-version = "1.0.0"
-dependencies = [
- "ndarray",
- "numpy",
- "pyo3",
- "rand",
-]

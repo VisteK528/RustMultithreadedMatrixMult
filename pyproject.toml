@@ -2,6 +2,9 @@
 requires = ["maturin>=1,<2"]
 build-backend = "maturin"
 
+[tool.maturin]
+features = ["pyo3/extension-module"]
+
 [project]
 name = "multithread_matrix"
 authors = [{name="Piotr Patek", email="piotrpatek17@gmail.com"}]

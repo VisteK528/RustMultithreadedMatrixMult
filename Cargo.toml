@@ -15,8 +15,11 @@ name = "multithread_matrix_bin"
 path = "rust_examples/main.rs"
 
 [dependencies]
-pyo3 = { version = "0.21.2", features = ["extension-module"] }
+pyo3 = { version = "0.21.2", features = ["extension-module", "auto-initialize"] }
 numpy = "0.21.0"
 ndarray = "0.15"
 rand = "0.8"
 
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]

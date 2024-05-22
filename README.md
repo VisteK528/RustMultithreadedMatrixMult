@@ -5,11 +5,18 @@ W ramach biblioteki zaimplementowano algorytm do wielowątkowego mnożenia macie
 
 Do wystawienia funkcji po stronie Pythona wykorzystano bibliotekę [PyO3](https://pyo3.rs/v0.21.2/).
 
+Przetestowano na platformach:
+- `Ubuntu 22.04 LTS` + `Intel® Core™ i7-10875H CPU @ 2.30GHz × 16` (`x86_64`)
+- `macOS Sonoma 14.3` + `Apple M1` (`arm64`)
+
 Wykorzystane wersje języków:
 - Python: `3.10.x`
 - Rust `1.78.0`
 
 ## Instalacja pakietu pythonowego
+Przed instalacją pakietu pythonowego należy się upewnić, że na komputerze na którym chcemy zainstalować bibliotekę jest dostępny kompilator języka Rust.
+Instukcja instalacji znajduje się pod tym [linkiem](https://www.rust-lang.org/tools/install).
+
 W katalogu projektu z plikiem `pyproject.toml` wykonujemy następującą komendę:
 ```bash
 pip3 install .
